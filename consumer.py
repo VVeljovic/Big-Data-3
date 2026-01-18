@@ -1,6 +1,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, BooleanType, TimestampType
 from pyspark.sql.functions import from_csv, avg, window, col, count, first
+from pyspark.ml import PipelineModel
 import sys
 
 window_type = sys.argv[1]
@@ -12,6 +13,8 @@ spark = SparkSession.builder.appName("Big-Data-3") \
         .getOrCreate()
 
 spark.sparkContext.setLogLevel("ERROR")
+
+model = PipelineModel.load("models/accident_gbt_pipeline")
 
 accidents_schema = StructType([
     StructField("ID", StringType(), True),
@@ -82,7 +85,7 @@ else:
 
 
 windowed_df = (
-    parsed_df.withWatermark("Start_Time", "365 days")
+    parsed_df.withWatermark("Start_Time", "1 hour")
     .groupBy(windowed_col)
     .agg(
         avg("Visibility_mi").alias("Visibility_mi"),
@@ -104,11 +107,33 @@ windowed_df = (
     )
 )
 
+windowed_features = windowed_df.select(
+    col("window.start").alias("window_start"),
+    col("window.end").alias("window_end"),
+    "accident_count",
+    "Visibility_mi",
+    "Wind_Speed_mph",
+    "Temperature_F",
+    "Humidity_percent",
+    "Pressure_in",
+    "Distance_mi",
+    "Precipitation_in",
+    "Start_Lat",
+    "Start_Lng",
+    "Junction",
+    "Traffic_Signal",
+    "Crossing",
+    "Weather_Condition",
+    "Wind_Direction",
+    "Sunrise_Sunset"
+)
 
+predictions = model.transform(windowed_features)
 
-windowed_df.writeStream \
-    .format('console') \
-    .outputMode("update") \
-    .option("checkpointLocation", "checkpoint/windowed_predictions") \
-    .start() \
-    .awaitTermination()
+predictions.writeStream \
+ .format("json") \
+ .outputMode("append") \
+ .option("path", "output/predictions_json") \
+ .option("checkpointLocation", "output/checkpoint") \
+ .start() \
+ .awaitTermination()

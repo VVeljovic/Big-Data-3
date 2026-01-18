@@ -20,6 +20,5 @@ for line in file:
 
     print(line)
     producer.flush()
-    time.sleep(3)
 
 file.close()

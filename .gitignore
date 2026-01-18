@@ -1,3 +1,4 @@
 *.csv
-*\checkpoint
-*\models
+checkpoint/
+models/
+output/
