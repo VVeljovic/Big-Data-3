@@ -10,10 +10,9 @@ window_duration = sys.argv[2]
 slide_duration = sys.argv[3]
 
 spark = SparkSession.builder.appName("Big-Data-3") \
-        .master("local[*]") \
         .getOrCreate()
 
-model = PipelineModel.load("models/accident_gbt_pipeline")
+model = PipelineModel.load("hdfs://namenode:9000/models/accident_gbt_pipeline")
 
 accidents_schema = StructType([
     StructField("ID", StringType(), True),
@@ -78,7 +77,7 @@ string_schema = accidents_schema.simpleString()
 
 df = (
     spark.readStream.format("kafka") \
-    .option("kafka.bootstrap.servers", "localhost:9092") \
+    .option("kafka.bootstrap.servers", "kafka:29092") \
     .option("subscribe", "us_accidents_topic") \
     .option("startingOffsets", "earliest") \
     .load() \
@@ -142,7 +141,7 @@ predictions = model.transform(windowed_features)
 predictions.writeStream \
  .format("json") \
  .outputMode("append") \
- .option("path", "output/predictions_json") \
- .option("checkpointLocation", "output/checkpoint") \
+ .option("path", "hdfs://namenode:9000/output/predictions_json") \
+ .option("checkpointLocation", "hdfs://namenode:9000/output/checkpoint") \
  .start() \
  .awaitTermination()

@@ -17,7 +17,7 @@ for line in file:
         key = str(uuid4()),
         value = line.strip()
     )
-
+    time.sleep(1)
     print(line)
     producer.flush()
 
