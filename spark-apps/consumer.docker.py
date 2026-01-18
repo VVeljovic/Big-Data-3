@@ -12,6 +12,8 @@ slide_duration = sys.argv[3]
 spark = SparkSession.builder.appName("Big-Data-3") \
         .getOrCreate()
 
+spark.sparkContext.setLogLevel("ERROR")
+
 model = PipelineModel.load("hdfs://namenode:9000/models/accident_gbt_pipeline")
 
 accidents_schema = StructType([

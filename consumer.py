@@ -12,6 +12,7 @@ slide_duration = sys.argv[3]
 spark = SparkSession.builder.appName("Big-Data-3") \
         .master("local[*]") \
         .getOrCreate()
+spark.sparkContext.setLogLevel("ERROR")
 
 model = PipelineModel.load("models/accident_gbt_pipeline")
 

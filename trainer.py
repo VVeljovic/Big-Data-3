@@ -20,7 +20,7 @@ df = df.withColumn(
     when(col("Severity") >= 3, 1).otherwise(0)
 )
 
-fractions = {0: 0.06, 1: 1.0}
+fractions = {0: 0.24, 1: 1.0} 
 df = df.sampleBy("label", fractions, seed=36)
 
 train_df, test_df = df.randomSplit([0.85, 0.15], seed=5043)

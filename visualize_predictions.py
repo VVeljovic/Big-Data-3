@@ -4,11 +4,9 @@ import matplotlib.pyplot as plt
 import os
 
 def load_predictions(json_folder="output/predictions_json"):
-    """Učitava sve JSON predikcije u DataFrame"""
     files = glob.glob(os.path.join(json_folder, "*.json"))
 
     if not files:
-        print("Nema JSON fajlova.")
         return None
 
     df_list = []
@@ -23,7 +21,6 @@ def load_predictions(json_folder="output/predictions_json"):
             continue
 
     if not df_list:
-        print("Nema validnih podataka za prikaz.")
         return None
 
     df = pd.concat(df_list, ignore_index=True)
@@ -35,11 +32,11 @@ def load_predictions(json_folder="output/predictions_json"):
 
 
 def plot_probability_histogram(df):
-    """Graf 1: Histogram verovatnoća visoke ozbiljnosti"""
     fig, ax = plt.subplots(figsize=(10, 5))
 
     ax.hist(df["high_severity_prob"], bins=20, color="steelblue", edgecolor="black")
     ax.axvline(x=0.5, color="red", linestyle="--", label="Prag odluke (0.5)")
+    ax.set_title("Histogram verovatnoće visoke ozbiljnosti nesreća")
     ax.set_xlabel("Verovatnoća visoke ozbiljnosti")
     ax.set_ylabel("Broj prozora")
     ax.legend()
@@ -50,7 +47,6 @@ def plot_probability_histogram(df):
 
 
 def plot_weather_analysis(df):
-    """Graf 2: Analiza po vremenskim uslovima"""
     weather_stats = df.groupby("Weather_Condition").agg({
         "prediction": "mean",
         "high_severity_prob": "mean",
@@ -58,6 +54,7 @@ def plot_weather_analysis(df):
     }).round(3)
 
     weather_stats.columns = ["Avg_Prediction", "Avg_Probability", "Total_Accidents"]
+    weather_stats = weather_stats[weather_stats.index != "Clear"]
     weather_stats = weather_stats.sort_values("Avg_Probability", ascending=False).head(15)
 
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -72,20 +69,41 @@ def plot_weather_analysis(df):
     plt.show()
 
 
-def print_summary(df):
-    """Ispisuje sumarnu statistiku"""
-    print("\n" + "="*50)
-    print("SUMARNA STATISTIKA PREDIKCIJA")
-    print("="*50)
-    print(f"Ukupno prozora: {len(df)}")
-    print(f"Ukupno nesreća: {df['accident_count'].sum()}")
-    print(f"\nPredikcije:")
-    print(f"  - Niska ozbiljnost: {(df['prediction'] == 0).sum()} ({(df['prediction'] == 0).mean()*100:.1f}%)")
-    print(f"  - Visoka ozbiljnost: {(df['prediction'] == 1).sum()} ({(df['prediction'] == 1).mean()*100:.1f}%)")
-    print(f"\nProsečna verovatnoća visoke ozbiljnosti: {df['high_severity_prob'].mean():.3f}")
-    print(f"Min: {df['high_severity_prob'].min():.3f}, Max: {df['high_severity_prob'].max():.3f}")
-    print("="*50)
+def plot_hourly_weekday_heatmap(df):
+   
+    df_copy = df.copy()
+    df_copy["hour"] = df_copy["window_start"].dt.hour
+    df_copy["weekday"] = df_copy["window_start"].dt.dayofweek
 
+    pivot = df_copy.pivot_table(
+        values="high_severity_prob",
+        index="hour",
+        columns="weekday",
+        aggfunc="mean"
+    )
+
+    day_names = ["Pon", "Uto", "Sre", "Čet", "Pet", "Sub", "Ned"]
+    pivot.columns = [day_names[i] for i in pivot.columns]
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    im = ax.imshow(pivot.values, cmap="YlOrRd", aspect="auto")
+
+    ax.set_xticks(range(len(pivot.columns)))
+    ax.set_xticklabels(pivot.columns)
+    ax.set_yticks(range(len(pivot.index)))
+    ax.set_yticklabels([f"{h:02d}:00" for h in pivot.index])
+
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label("Prosečna verovatnoća visoke ozbiljnosti")
+
+    ax.set_xlabel("Dan u nedelji")
+    ax.set_ylabel("Sat")
+    ax.set_title("Rizik ozbiljnih nesreća po satu i danu u nedelji")
+
+    plt.tight_layout()
+    plt.savefig("output/hourly_weekday_heatmap.png", dpi=150)
+    plt.show()
 
 if __name__ == "__main__":
     os.makedirs("output", exist_ok=True)
@@ -93,11 +111,7 @@ if __name__ == "__main__":
     df = load_predictions()
 
     if df is not None and not df.empty:
-        print_summary(df)
-
-        print("\n[1/7] Histogram verovatnoća...")
         plot_probability_histogram(df)
-
-        print("[2/7] Analiza vremenskih uslova...")
         plot_weather_analysis(df)
+        plot_hourly_weekday_heatmap(df)
 
