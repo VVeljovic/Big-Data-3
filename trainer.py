@@ -7,6 +7,7 @@ from pyspark.ml.evaluation import BinaryClassificationEvaluator
 
 spark = SparkSession.builder \
     .appName("AccidentDataTrainer") \
+    .master("local[*]") \
     .getOrCreate()
 
 df = spark.read.csv(

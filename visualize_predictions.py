@@ -62,7 +62,7 @@ def plot_weather_analysis(df):
     ax.barh(weather_stats.index, weather_stats["Avg_Probability"], color="coral")
     ax.axvline(x=0.5, color="black", linestyle="--", alpha=0.5)
     ax.set_xlabel("Prosečna verovatnoća visoke ozbiljnosti")
-    ax.set_title("Top 15 vremenskih uslova po riziku ozbiljnih nesreća")
+    ax.set_title("Vremenski uslovi po ozbiljnosti nesreća")
 
     plt.tight_layout()
     plt.savefig("output/weather_risk_analysis.png", dpi=150)

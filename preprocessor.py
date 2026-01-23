@@ -2,10 +2,11 @@ import pandas as pd
 
 df = pd.read_csv('us_accidents.csv')
 
-df.dropna()
 
 df['Start_Time'] = pd.to_datetime(df['Start_Time'], errors='coerce')
 df['End_Time'] = pd.to_datetime(df['End_Time'], errors='coerce')
+
+df.dropna()
 
 rename_dict = {
     'Distance(mi)': 'Distance_mi',

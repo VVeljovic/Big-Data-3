@@ -75,8 +75,6 @@ def mode_udf(values):
     counter = Counter(filtered)
     return counter.most_common(1)[0][0]
 
-string_schema = accidents_schema.simpleString()
-
 df = (
     spark.readStream.format("kafka") \
     .option("kafka.bootstrap.servers", "localhost:9092") \
@@ -85,6 +83,8 @@ df = (
     .load() \
     .selectExpr("CAST(value AS STRING) as csv_line") \
 )
+
+string_schema = accidents_schema.simpleString()
 
 parsed_df = df.select(from_csv(df.csv_line, string_schema).alias("data")).select("data.*")
 
