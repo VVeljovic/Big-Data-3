@@ -1,0 +1,4 @@
+docker exec -it namenode bash
+hdfs dfs -get /output/predictions_json /tmp/predictions_json
+docker cp namenode:/tmp/predictions_json ./output/predictions_json
+python visualize_predictions.py

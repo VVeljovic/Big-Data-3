@@ -95,7 +95,7 @@ else:
 
 
 windowed_df = (
-    parsed_df.withWatermark("Start_Time", "1 hour")
+    parsed_df.withWatermark("Start_Time", window_duration)
     .groupBy(windowed_col)
     .agg(
         avg("Visibility_mi").alias("Visibility_mi"),
